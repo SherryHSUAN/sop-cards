@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>分享車禍 SOP 圖卡</title>
+<style>
+:root{--navy:#1B3A7A;--cream:#FFF9EC;--amber:#F6B52E}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;
+  background:var(--cream);color:var(--navy);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;text-align:center}
+img{width:min(70vw,260px);border-radius:16px;box-shadow:0 8px 22px rgba(27,58,122,.2)}
+h1{font-size:24px;margin:0}
+#msg{font-size:17px;line-height:1.6;min-height:1.6em;margin:0}
+button{font:inherit;font-size:20px;font-weight:800;border:0;border-radius:14px;padding:14px 34px;background:var(--amber);color:var(--navy);cursor:pointer}
+button:disabled{opacity:.5}
+</style>
+</head>
+<body>
+<img id="preview" src="cards/zhu1.png" alt="車禍 SOP 圖卡">
+<h1 id="title">分享車禍 SOP 圖卡</h1>
+<p id="msg">準備中…</p>
+<button id="go" disabled>選擇客戶</button>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+// LINE 小程式 ID：在 LINE Developers 建立 LIFF 後填入
+const LIFF_ID = "";
+
+const AGENTS = {
+  zhu: { name: "竹萱", tel: "0953341419" },
+  wu:  { name: "尚諭", tel: "0963216520" }
+};
+
+// 三張圖卡組成一則可左右滑動的訊息；點圖放大，下方按鈕打電話給該業務
+function buildMessage(agentKey, baseUrl) {
+  const a = AGENTS[agentKey];
+  const bubbles = [1, 2, 3].map(n => {
+    const url = `${baseUrl}cards/${agentKey}${n}.png`;
+    return {
+      type: "bubble",
+      size: "giga",
+      hero: { type: "image", url: url, size: "full", aspectRatio: "1080:1500", aspectMode: "cover",
+              action: { type: "uri", label: "放大圖卡", uri: url } },
+      footer: { type: "box", layout: "vertical", contents: [
+        { type: "button", style: "primary", color: "#1B3A7A",
+          action: { type: "uri", label: `📞 打給${a.name}`, uri: `tel:${a.tel}` } }
+      ] }
+    };
+  });
+  return { type: "flex", altText: "車禍處理 SOP 圖卡", contents: { type: "carousel", contents: bubbles } };
+}
+
+const msg = document.getElementById("msg"), go = document.getElementById("go");
+
+async function share(agentKey) {
+  go.disabled = true;
+  msg.textContent = "請選擇要傳送的客戶";
+  try {
+    const base = location.origin + location.pathname.replace(/[^/]*$/, "");
+    const res = await liff.shareTargetPicker([buildMessage(agentKey, base)]);
+    if (res) { msg.textContent = "✅ 已傳送"; liff.closeWindow(); }
+    else msg.textContent = "已取消，要傳的話再按一次";
+  } catch (e) {
+    msg.textContent = "傳送失敗：" + e.message;
+  }
+  go.disabled = false;
+}
+
+async function start() {
+  const agentKey = new URLSearchParams(location.search).get("agent");
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+    const key = new URLSearchParams(location.search).get("agent") || agentKey;
+    if (!AGENTS[key]) { msg.textContent = "網址缺少業務版本"; return; }
+    document.getElementById("preview").src = `cards/${key}1.png`;
+    document.getElementById("title").textContent = `分享${AGENTS[key].name}版圖卡`;
+    if (!liff.isApiAvailable("shareTargetPicker")) { msg.textContent = "請在 LINE 裡開啟這個頁面"; return; }
+    msg.textContent = "";
+    go.disabled = false;
+    go.onclick = () => share(key);
+    share(key);
+  } catch (e) {
+    msg.textContent = "開啟失敗：" + e.message;
+  }
+}
+start();
+</script>
+</body>
+</html>
