@@ -18,7 +18,7 @@ button:disabled{opacity:.5}
 </style>
 </head>
 <body>
-<img id="preview" src="cards/zhu1.png" alt="車禍 SOP 圖卡">
+<img id="preview" src="cards/zhu1.jpg" alt="車禍 SOP 圖卡">
 <h1 id="title">分享車禍 SOP 圖卡</h1>
 <p id="msg">準備中…</p>
 <button id="go" disabled>選擇客戶</button>
@@ -36,7 +36,7 @@ const AGENTS = {
 // 三張圖卡組成一則可左右滑動的訊息；點圖放大
 function buildMessage(agentKey, baseUrl) {
   const bubbles = [1, 2, 3].map(n => {
-    const url = `${baseUrl}cards/${agentKey}${n}.png`;
+    const url = `${baseUrl}cards/${agentKey}${n}.jpg`;
     return {
       type: "bubble",
       size: "giga",
@@ -70,7 +70,7 @@ async function start() {
     if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
     const key = new URLSearchParams(location.search).get("agent") || agentKey;
     if (!AGENTS[key]) { msg.textContent = "網址缺少業務版本"; return; }
-    document.getElementById("preview").src = `cards/${key}1.png`;
+    document.getElementById("preview").src = `cards/${key}1.jpg`;
     document.getElementById("title").textContent = `分享${AGENTS[key].name}版圖卡`;
     if (!liff.isApiAvailable("shareTargetPicker")) { msg.textContent = "請在 LINE 裡開啟這個頁面"; return; }
     msg.textContent = "";
