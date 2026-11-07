@@ -29,24 +29,19 @@ button:disabled{opacity:.5}
 const LIFF_ID = "2012454471-hZEoeU9d";
 
 const AGENTS = {
-  zhu: { name: "竹萱", tel: "0953341419" },
-  wu:  { name: "尚諭", tel: "0963216520" }
+  zhu: { name: "竹萱" },
+  wu:  { name: "尚諭" }
 };
 
-// 三張圖卡組成一則可左右滑動的訊息；點圖放大，下方按鈕打電話給該業務
+// 三張圖卡組成一則可左右滑動的訊息；點圖放大
 function buildMessage(agentKey, baseUrl) {
-  const a = AGENTS[agentKey];
   const bubbles = [1, 2, 3].map(n => {
     const url = `${baseUrl}cards/${agentKey}${n}.png`;
     return {
       type: "bubble",
       size: "giga",
       hero: { type: "image", url: url, size: "full", aspectRatio: "1080:1500", aspectMode: "cover",
-              action: { type: "uri", label: "放大圖卡", uri: url } },
-      footer: { type: "box", layout: "vertical", contents: [
-        { type: "button", style: "primary", color: "#1B3A7A",
-          action: { type: "uri", label: `📞 打給${a.name}`, uri: `tel:${a.tel}` } }
-      ] }
+              action: { type: "uri", label: "放大圖卡", uri: url } }
     };
   });
   return { type: "flex", altText: "車禍處理 SOP 圖卡", contents: { type: "carousel", contents: bubbles } };
