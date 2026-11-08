@@ -24,6 +24,7 @@ button:disabled{opacity:.5}
 <button id="go" disabled>選擇客戶</button>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="rescue/data.js"></script>
 <script>
 // LINE 小程式 ID：在 LINE Developers 建立 LIFF 後填入
 const LIFF_ID = "2012454471-hZEoeU9d";
@@ -47,14 +48,31 @@ function buildMessage(agentKey, baseUrl) {
   return { type: "flex", altText: "車禍處理 SOP 圖卡", contents: { type: "carousel", contents: bubbles } };
 }
 
+// 道路救援：一張圖卡，下方有撥打電話與官網按鈕
+function buildRescueMessage(co, key, baseUrl) {
+  const url = `${baseUrl}rescue/${key}.jpg`;
+  const dial = co.hotlines.map(h => ({
+    type: "button", style: "primary", color: "#E4521B", height: "sm",
+    action: { type: "uri", label: `📞 ${h.dial || h.label + " " + h.num}`.slice(0, 40), uri: `tel:${h.tel}` }
+  }));
+  const site = { type: "button", style: "secondary", height: "sm",
+    action: { type: "uri", label: `🌐 ${co.name}官網`, uri: co.site } };
+  return { type: "flex", altText: `${co.full}道路救援資訊`, contents: {
+    type: "bubble", size: "giga",
+    hero: { type: "image", url: url, size: "full", aspectRatio: "1080:1500", aspectMode: "cover",
+            action: { type: "uri", label: "放大圖卡", uri: url } },
+    footer: { type: "box", layout: "vertical", spacing: "sm", contents: dial.concat([site]) }
+  } };
+}
+
 const msg = document.getElementById("msg"), go = document.getElementById("go");
 
-async function share(agentKey) {
+async function share(makeMessage) {
   go.disabled = true;
   msg.textContent = "請選擇要傳送的客戶";
   try {
     const base = location.origin + location.pathname.replace(/[^/]*$/, "");
-    const res = await liff.shareTargetPicker([buildMessage(agentKey, base)]);
+    const res = await liff.shareTargetPicker([makeMessage(base)]);
     if (res) { msg.textContent = "✅ 已傳送"; liff.closeWindow(); }
     else msg.textContent = "已取消，要傳的話再按一次";
   } catch (e) {
@@ -63,11 +81,27 @@ async function share(agentKey) {
   go.disabled = false;
 }
 
+function startRescue(key) {
+  const co = ROADSIDE[key];
+  if (!co) { msg.textContent = "找不到這家保險公司"; return; }
+  document.title = `分享${co.name}道路救援圖卡`;
+  document.getElementById("preview").src = `rescue/${key}.jpg`;
+  document.getElementById("title").textContent = `分享${co.name}道路救援圖卡`;
+  if (!liff.isApiAvailable("shareTargetPicker")) { msg.textContent = "請在 LINE 裡開啟這個頁面"; return; }
+  msg.textContent = "";
+  go.disabled = false;
+  const make = base => buildRescueMessage(co, key, base);
+  go.onclick = () => share(make);
+  share(make);
+}
+
 async function start() {
   const agentKey = new URLSearchParams(location.search).get("agent");
   try {
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+    const rescueKey = new URLSearchParams(location.search).get("rescue");
+    if (rescueKey) { startRescue(rescueKey); return; }
     const key = new URLSearchParams(location.search).get("agent") || agentKey;
     if (!AGENTS[key]) { msg.textContent = "網址缺少業務版本"; return; }
     document.getElementById("preview").src = `cards/${key}1.jpg`;
@@ -75,8 +109,9 @@ async function start() {
     if (!liff.isApiAvailable("shareTargetPicker")) { msg.textContent = "請在 LINE 裡開啟這個頁面"; return; }
     msg.textContent = "";
     go.disabled = false;
-    go.onclick = () => share(key);
-    share(key);
+    const make = base => buildMessage(key, base);
+    go.onclick = () => share(make);
+    share(make);
   } catch (e) {
     msg.textContent = "開啟失敗：" + e.message;
   }
