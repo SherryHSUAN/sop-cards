@@ -37,7 +37,8 @@ const AGENTS = {
 // 三張圖卡組成一則可左右滑動的訊息；點圖放大
 function buildMessage(agentKey, baseUrl) {
   const bubbles = [1, 2, 3].map(n => {
-    const url = `${baseUrl}cards/${agentKey}${n}.jpg`;
+    // ?v= 讓 LINE 抓新圖，圖卡改版時更新這個日期
+    const url = `${baseUrl}cards/${agentKey}${n}.jpg?v=20261118`;
     return {
       type: "bubble",
       size: "giga",
